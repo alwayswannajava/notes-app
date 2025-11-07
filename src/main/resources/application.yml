@@ -1,0 +1,14 @@
+server:
+  port: 8081
+
+mongock:
+  migration-scan-package: com.notesapp.migration
+  enabled: true
+
+spring:
+  application:
+    name: notes-app
+  data:
+    mongodb:
+      uri: ${MONGODB_URL}
+      database: notes
