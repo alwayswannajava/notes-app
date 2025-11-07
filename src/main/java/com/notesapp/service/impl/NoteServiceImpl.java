@@ -1,14 +1,19 @@
 package com.notesapp.service.impl;
 
 import com.notesapp.domain.Note;
+import com.notesapp.domain.NoteType;
 import com.notesapp.repository.NoteRepository;
 import com.notesapp.service.NoteService;
 import com.notesapp.service.exception.NoteNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import static java.util.function.Function.identity;
@@ -35,6 +40,7 @@ public class NoteServiceImpl implements NoteService {
     @Override
     public Note updateNote(String noteId, Note note) {
         log.info("Trying to update a note with id: {}", noteId);
+        //TODO: update
         return null;
     }
 
@@ -47,6 +53,7 @@ public class NoteServiceImpl implements NoteService {
 
     @Override
     public Note fetchById(String noteId) {
+        log.info("Fetching note with id: {}", noteId);
         return noteRepository.findById(noteId)
                 .orElseThrow(
                         () -> new NoteNotFoundException("Note with id: " + noteId + " not found"));
@@ -54,9 +61,26 @@ public class NoteServiceImpl implements NoteService {
 
     @Override
     public Map<String, Long> fetchUniqueWords(Note note) {
+        log.info("Fetching unique words from note with id: {}", note.getId());
         return Stream.of(splitNoteTextByWordSplitPattern(note.getText()))
                 .filter(word -> !word.isBlank())
-                .collect(groupingBy(identity(), counting()));
+                .collect(groupingBy(identity(), counting()))
+                .entrySet().stream()
+                .sorted(Map.Entry.<String, Long>comparingByKey().reversed())
+                .collect(toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue,
+                        (e1, e2) -> e1,
+                        LinkedHashMap::new
+                ));
+    }
+
+    @Override
+    public List<Note> fetchAllNotes(Set<NoteType> filters, Pageable pageable) {
+        log.info("Fetching all notes with filters: {}, pageable: {}", filters, pageable);
+        //TODO: mapping to fetch response
+        return filters == null ? noteRepository.findAll(pageable).getContent()
+                                   : noteRepository.findAllByTags(filters, pageable);
     }
 
     private String[] splitNoteTextByWordSplitPattern(String text) {

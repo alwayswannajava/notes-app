@@ -2,6 +2,7 @@ package com.notesapp.controller;
 
 import com.notesapp.controller.mapper.NoteMapper;
 import com.notesapp.domain.Note;
+import com.notesapp.domain.NoteType;
 import com.notesapp.dto.request.CreateNoteRequest;
 import com.notesapp.dto.request.UpdateNoteRequest;
 import com.notesapp.dto.response.CreateNoteResponse;
@@ -10,6 +11,9 @@ import com.notesapp.service.NoteService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -20,9 +24,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Slf4j
 @RestController
@@ -66,5 +74,15 @@ public class NoteController {
         Map<String, Long> uniqueWordCountMap = noteService.fetchUniqueWords(note);
         log.info("-----------------------------GET REQUEST END---------------------------");
         return ResponseEntity.ok(uniqueWordCountMap);
+    }
+
+    @GetMapping("/fetchAll")
+    public ResponseEntity<?> fetchAll(@RequestParam(required = false) Set<NoteType> noteTypes,
+                                           @PageableDefault(direction = Sort.Direction.DESC,
+                                                   sort = "createdDate") Pageable pageable) {
+        log.info("-----------------------------GET REQUEST---------------------------");
+        List<Note> notes = noteService.fetchAllNotes(noteTypes, pageable);
+        log.info("-----------------------------GET REQUEST END---------------------------");
+        return ResponseEntity.ok(notes);
     }
 }

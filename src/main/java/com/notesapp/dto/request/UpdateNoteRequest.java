@@ -10,15 +10,11 @@ import java.util.Set;
 
 public record UpdateNoteRequest(
         @NotBlank(message = "title can't be blank")
-        @Size(min = 2, max = 255)
+        @Size(min = 2, max = 255, message = "title length must be between 2 and 255 characters")
         String title,
 
-        @FutureOrPresent
-        @DateTimeFormat(pattern = "dd-MM-yyyy HH:mm")
-        LocalDateTime createdDate,
-
         @NotBlank
-        @Size(min = 2, max = 255)
+        @Size(min = 2, max = 255, message = "text length must be between 2 and 255 characters")
         String text,
 
         Set<NoteType> tags

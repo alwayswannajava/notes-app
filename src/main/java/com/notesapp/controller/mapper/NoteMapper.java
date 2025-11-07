@@ -11,4 +11,5 @@ public interface NoteMapper {
     CreateNoteResponse toResponse(Note note);
 
     Note toNote(CreateNoteRequest request);
+
 }

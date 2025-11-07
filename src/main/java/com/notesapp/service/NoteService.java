@@ -1,7 +1,11 @@
 package com.notesapp.service;
 
 import com.notesapp.domain.Note;
+import com.notesapp.domain.NoteType;
+import org.springframework.data.domain.Pageable;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public interface NoteService {
     Note createNote(Note note);
@@ -13,4 +17,6 @@ public interface NoteService {
     Note fetchById(String noteId);
 
     Map<String, Long> fetchUniqueWords(Note note);
+
+    List<Note> fetchAllNotes(Set<NoteType> filters, Pageable pageable);
 }
