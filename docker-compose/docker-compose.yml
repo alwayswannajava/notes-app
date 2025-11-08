@@ -1,0 +1,36 @@
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb-notes
+    env_file:
+      - .env
+    ports:
+      - $MONGODB_DOCKER_PORT:$MONGODB_REAL_PORT
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: $MONGO_INITDB_ROOT_USERNAME
+      MONGO_INITDB_ROOT_PASSWORD: $MONGO_INITDB_ROOT_PASSWORD
+      MONGO_INITDB_DATABASE: $MONGO_INITDB_DATABASE
+    volumes:
+      - notes-mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  notes-app:
+    image: mykhailokornukh/notes-app:1.0
+    container_name: notes-app
+    env_file:
+      - .env
+    ports:
+      - $NOTES_APP_DOCKER_PORT:$NOTES_APP_REAL_PORT
+    environment:
+      SPRING_DATA_MONGODB_URI: $SPRING_DATA_MONGODB_URI
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+volumes:
+  notes-mongo-data:
