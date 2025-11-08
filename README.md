@@ -8,7 +8,7 @@ The easiest way to run the app is using **Docker Compose**.
 
 1. Make sure **Docker** is installed and running on your machine. You can download it here: [Docker Official Website](https://www.docker.com/get-started)
 2. Create a `.env` file in the docker-compose folder. You can use the content in the example `.env.sample` file and put your own values.
-3. Run the app with Docker Compose:
+3. Move to docker-compose folder. Run the app with Docker Compose command:
 
 ```bash
 docker-compose up -d
