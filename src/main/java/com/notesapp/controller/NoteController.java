@@ -1,11 +1,10 @@
 package com.notesapp.controller;
 
-import com.notesapp.controller.mapper.NoteMapper;
-import com.notesapp.domain.Note;
 import com.notesapp.domain.NoteType;
 import com.notesapp.dto.request.CreateNoteRequest;
 import com.notesapp.dto.request.UpdateNoteRequest;
 import com.notesapp.dto.response.CreateNoteResponse;
+import com.notesapp.dto.response.FetchNoteResponse;
 import com.notesapp.dto.response.UpdateNoteResponse;
 import com.notesapp.service.NoteService;
 import jakarta.validation.Valid;
@@ -25,7 +24,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -39,27 +37,26 @@ import java.util.Set;
 @Validated
 public class NoteController {
     private final NoteService noteService;
-    private final NoteMapper noteMapper;
 
     @PostMapping("/new")
-    @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<CreateNoteResponse> createNote(@Valid @RequestBody CreateNoteRequest request) {
         log.info("---------------------------POST REQUEST---------------------------");
-        Note createdNote = noteService.createNote(noteMapper.toNote(request));
+        CreateNoteResponse response = noteService.createNote(request);
         log.info("---------------------------POST REQUEST END---------------------------");
-        return ResponseEntity.ok(noteMapper.toResponse(createdNote));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(response);
     }
 
-    @PatchMapping("/update/{noteId}")
+    @PatchMapping("/{noteId}")
     public ResponseEntity<UpdateNoteResponse> updateNote(@PathVariable String noteId,
             @Valid @RequestBody UpdateNoteRequest request) {
         log.info("---------------------------PATCH REQUEST---------------------------");
-        var note = noteService.fetchById(noteId);
+        var response = noteService.updateNote(noteId, request);
         log.info("---------------------------PATCH REQUEST END---------------------------");
-        return null;
+        return ResponseEntity.ok(response);
     }
 
-    @DeleteMapping("/delete/{noteId}")
+    @DeleteMapping("/{noteId}")
     public ResponseEntity<Void> deleteNote(@PathVariable String noteId) {
         log.info("---------------------------DELETE REQUEST---------------------------");
         noteService.deleteNote(noteId);
@@ -70,19 +67,26 @@ public class NoteController {
     @GetMapping("/{noteId}/stats")
     public ResponseEntity<Map<String, Long>> fetchUniqueWords(@PathVariable String noteId) {
         log.info("-----------------------------GET REQUEST---------------------------");
-        Note note = noteService.fetchById(noteId);
-        Map<String, Long> uniqueWordCountMap = noteService.fetchUniqueWords(note);
+        Map<String, Long> uniqueWordCountMap = noteService.fetchUniqueWords(noteId);
         log.info("-----------------------------GET REQUEST END---------------------------");
         return ResponseEntity.ok(uniqueWordCountMap);
     }
 
-    @GetMapping("/fetchAll")
-    public ResponseEntity<?> fetchAll(@RequestParam(required = false) Set<NoteType> noteTypes,
-                                           @PageableDefault(direction = Sort.Direction.DESC,
+    @GetMapping("/text/{noteId}")
+    public ResponseEntity<String> fetchText(@PathVariable String noteId) {
+        log.info("-----------------------------GET REQUEST---------------------------");
+        var responseText = noteService.fetchTextById(noteId);
+        log.info("-----------------------------GET REQUEST END---------------------------");
+        return ResponseEntity.ok(responseText);
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<List<FetchNoteResponse>> fetchAll(@RequestParam(required = false) Set<NoteType> filters,
+                                                            @PageableDefault(direction = Sort.Direction.DESC,
                                                    sort = "createdDate") Pageable pageable) {
         log.info("-----------------------------GET REQUEST---------------------------");
-        List<Note> notes = noteService.fetchAllNotes(noteTypes, pageable);
+        List<FetchNoteResponse> fetchNoteResponseList = noteService.fetchAllNotes(filters, pageable);
         log.info("-----------------------------GET REQUEST END---------------------------");
-        return ResponseEntity.ok(notes);
+        return ResponseEntity.ok(fetchNoteResponseList);
     }
 }

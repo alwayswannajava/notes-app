@@ -10,5 +10,5 @@ spring:
     name: notes-app
   data:
     mongodb:
-      uri: ${MONGODB_URI}
+      uri: ${MONGODB_URL}
       database: notes

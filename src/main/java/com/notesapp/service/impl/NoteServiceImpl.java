@@ -1,10 +1,15 @@
 package com.notesapp.service.impl;
 
-import com.notesapp.domain.Note;
 import com.notesapp.domain.NoteType;
+import com.notesapp.dto.request.CreateNoteRequest;
+import com.notesapp.dto.request.UpdateNoteRequest;
+import com.notesapp.dto.response.CreateNoteResponse;
+import com.notesapp.dto.response.FetchNoteResponse;
+import com.notesapp.dto.response.UpdateNoteResponse;
 import com.notesapp.repository.NoteRepository;
 import com.notesapp.service.NoteService;
 import com.notesapp.service.exception.NoteNotFoundException;
+import com.notesapp.service.mapper.NoteMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
@@ -25,23 +30,29 @@ import static java.util.stream.Collectors.toMap;
 @RequiredArgsConstructor
 @Slf4j
 public class NoteServiceImpl implements NoteService {
-    private static final String WORD_SPLIT_REGEX = "\\W+";
+    private static final String WHITESPACE_SPLIT_REGEX = "\\s+";
+    private static final String WORD_REGEX = "[a-zA-Z]+";
 
     private final NoteRepository noteRepository;
+    private final NoteMapper noteMapper;
 
     @Override
-    public Note createNote(Note note) {
-        log.info("Trying to create a node with data: {}", note);
-        var savedNote = noteRepository.save(note);
+    public CreateNoteResponse createNote(CreateNoteRequest request) {
+        log.info("Trying to create a node with data: {}", request);
+        var savedNote = noteRepository.save(noteMapper.toNote(request));
         log.info("Note created successfully, id: {}", savedNote);
-        return savedNote;
+        return noteMapper.toCreateResponse(savedNote);
     }
 
     @Override
-    public Note updateNote(String noteId, Note note) {
+    public UpdateNoteResponse updateNote(String noteId, UpdateNoteRequest request) {
         log.info("Trying to update a note with id: {}", noteId);
-        //TODO: update
-        return null;
+        var note = noteRepository.findById(noteId)
+                .orElseThrow(
+                        () -> new NoteNotFoundException("Note with id: " + noteId + " not found"));
+        var updatedNote = noteRepository.save(noteMapper.toNote(note, request));
+        log.info("Note updated successfully, id: {}", updatedNote);
+        return noteMapper.toUpdateResponse(updatedNote);
     }
 
     @Override
@@ -52,18 +63,22 @@ public class NoteServiceImpl implements NoteService {
     }
 
     @Override
-    public Note fetchById(String noteId) {
+    public FetchNoteResponse fetchById(String noteId) {
         log.info("Fetching note with id: {}", noteId);
-        return noteRepository.findById(noteId)
+        var note = noteRepository.findById(noteId)
                 .orElseThrow(
                         () -> new NoteNotFoundException("Note with id: " + noteId + " not found"));
+        return noteMapper.toFetchResponse(note);
     }
 
     @Override
-    public Map<String, Long> fetchUniqueWords(Note note) {
-        log.info("Fetching unique words from note with id: {}", note.getId());
+    public Map<String, Long> fetchUniqueWords(String noteId) {
+        log.info("Fetching unique words from note with id: {}", noteId);
+        var note = noteRepository.findById(noteId)
+                .orElseThrow(() -> new NoteNotFoundException("Note with id: " + noteId + " not found"));
+
         return Stream.of(splitNoteTextByWordSplitPattern(note.getText()))
-                .filter(word -> !word.isBlank())
+                .filter(word -> !word.isBlank() && word.matches(WORD_REGEX))
                 .collect(groupingBy(identity(), counting()))
                 .entrySet().stream()
                 .sorted(Map.Entry.<String, Long>comparingByKey().reversed())
@@ -76,14 +91,34 @@ public class NoteServiceImpl implements NoteService {
     }
 
     @Override
-    public List<Note> fetchAllNotes(Set<NoteType> filters, Pageable pageable) {
+    public String fetchTextById(String noteId) {
+        log.info("Fetching text from note with id: {}", noteId);
+        return noteRepository.findById(noteId)
+                .orElseThrow(() -> new NoteNotFoundException("Note with id: " + noteId + " not found"))
+                .getText();
+    }
+
+    @Override
+    public List<FetchNoteResponse> fetchAllNotes(Set<NoteType> filters, Pageable pageable) {
         log.info("Fetching all notes with filters: {}, pageable: {}", filters, pageable);
-        //TODO: mapping to fetch response
-        return filters == null ? noteRepository.findAll(pageable).getContent()
-                                   : noteRepository.findAllByTags(filters, pageable);
+        return filters == null ? findAll(pageable)
+                               : findAllByTags(filters, pageable);
     }
 
     private String[] splitNoteTextByWordSplitPattern(String text) {
-        return text.split(WORD_SPLIT_REGEX);
+        return text.split(WHITESPACE_SPLIT_REGEX);
+    }
+
+    private List<FetchNoteResponse> findAll(Pageable pageable) {
+        return noteRepository.findAll(pageable)
+                .map(noteMapper::toFetchResponse)
+                .toList();
+    }
+
+    private List<FetchNoteResponse> findAllByTags(Set<NoteType> filters, Pageable pageable) {
+        return noteRepository.findAllByTags(filters, pageable)
+                .stream()
+                .map(noteMapper::toFetchResponse)
+                .toList();
     }
 }

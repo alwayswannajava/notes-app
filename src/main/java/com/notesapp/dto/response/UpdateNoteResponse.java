@@ -1,9 +1,11 @@
 package com.notesapp.dto.response;
 
-import java.time.LocalDateTime;
+import com.notesapp.domain.NoteType;
+import java.util.Set;
 
 public record UpdateNoteResponse(
         String title,
-        LocalDateTime createdDate
+        String text,
+        Set<NoteType> tags
 ) {
 }
