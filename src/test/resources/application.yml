@@ -1,0 +1,7 @@
+spring:
+  data:
+    mongodb:
+      database: test-notes-db
+
+mongock:
+  enabled: false
